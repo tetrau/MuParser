@@ -1,5 +1,7 @@
 import lxml.html
 import lxml.etree
+import multiprocessing
+import itertools
 
 
 class MuParserException(Exception):
@@ -109,11 +111,13 @@ class MuParser:
             result.update(dict(zip(keys, values)))
         return result
 
-    def parse(self, html):
+    def parse(self, html, extra=None):
         self.html = GoodHtml(html, encoding=self.encoding)
         result = {}
         result.update(self._parse_dynamic())
         result.update(self._parse_fixed_data())
+        if extra:
+            result.update(extra)
         result = self.post_processing(result)
         if self.default_formatter:
             rtn = {}
@@ -127,3 +131,34 @@ class MuParser:
 
     def post_processing(self, d):
         return d
+
+
+class MuAnalyst:
+    @staticmethod
+    def repeat_none():
+        return itertools.repeat(None)
+
+    def __init__(self, sources, parsers, extras=None, processes=None):
+        self.sources = list(sources)
+        if not extras:
+            self.extras = [self.repeat_none() for _ in self.sources]
+        else:
+            self.extras = [(self.repeat_none() if e is None else e) for e in extras]
+        self.parsers = list(parsers)
+        self.processes = processes
+
+    @staticmethod
+    def _f(args):
+        parsers, sources, extras = args
+        result = {}
+        for idx, (s, e) in enumerate(zip(sources, extras)):
+            result.update(parsers[idx].parse(s, e))
+        return result
+
+    def analyze(self):
+        with multiprocessing.Pool(processes=self.processes) as pool:
+            it = pool.imap(self._f, zip(itertools.repeat(self.parsers),
+                                        zip(*self.sources),
+                                        zip(*self.extras)))
+            for i in it:
+                yield i
