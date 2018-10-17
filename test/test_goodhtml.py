@@ -1,4 +1,4 @@
-from muparser import GoodHtml
+from muparser import _GoodHtml
 import unittest
 import os
 
@@ -10,6 +10,6 @@ class GoodHtmlTest(unittest.TestCase):
             self.html_string = f.read()
 
     def test_xpath(self):
-        good_html = GoodHtml(self.html_string)
+        good_html = _GoodHtml(self.html_string)
         r = good_html.xpath('//div[@class="block"]/p[1]/text()')
         self.assertEqual(['p1'], r)

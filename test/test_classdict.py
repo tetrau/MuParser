@@ -1,10 +1,10 @@
 import unittest
-from muparser import ClassDict
+from muparser import _ClassDict
 
 
 class TestClassDict(unittest.TestCase):
     def setUp(self):
-        self.class_dict = ClassDict({str: str.upper})
+        self.class_dict = _ClassDict({str: str.upper})
 
     def test_class_dict(self):
         f = self.class_dict['s']

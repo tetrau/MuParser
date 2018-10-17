@@ -12,7 +12,7 @@ class BadXpath(MuParserException):
     pass
 
 
-class ClassDict:
+class _ClassDict:
     def __init__(self, d):
         self.data = d
 
@@ -27,7 +27,7 @@ class ClassDict:
         return self.identity
 
 
-class GoodHtml:
+class _GoodHtml:
     xpath_cache = {}
 
     def __init__(self, html, encoding='utf-8', cache_xpath=True):
@@ -61,9 +61,9 @@ class GoodHtml:
 class MuParser:
     FIXED_DATA = {}
     DYNAMIC_DATA = {}
-    FIXED_FILED_VALUE_FORMATTER = ClassDict({})
-    DYNAMIC_FILED_NAME_FORMATTER = ClassDict({})
-    DYNAMIC_FILED_VALUE_FORMATTER = ClassDict({})
+    FIXED_FILED_VALUE_FORMATTER = _ClassDict({})
+    DYNAMIC_FILED_NAME_FORMATTER = _ClassDict({})
+    DYNAMIC_FILED_VALUE_FORMATTER = _ClassDict({})
 
     def to_string(self, e):
         if isinstance(e, lxml.html.HtmlElement):
@@ -82,8 +82,8 @@ class MuParser:
             raise exception
 
     def _parse_fixed_data(self):
-        if not isinstance(self.FIXED_FILED_VALUE_FORMATTER, ClassDict):
-            self.FIXED_FILED_VALUE_FORMATTER = ClassDict(self.FIXED_FILED_VALUE_FORMATTER)
+        if not isinstance(self.FIXED_FILED_VALUE_FORMATTER, _ClassDict):
+            self.FIXED_FILED_VALUE_FORMATTER = _ClassDict(self.FIXED_FILED_VALUE_FORMATTER)
         result = {}
         for key, xpath in self.FIXED_DATA.items():
             value = self.html.xpath(xpath)
@@ -96,10 +96,10 @@ class MuParser:
         return result
 
     def _parse_dynamic(self):
-        if not isinstance(self.DYNAMIC_FILED_NAME_FORMATTER, ClassDict):
-            self.DYNAMIC_FILED_NAME_FORMATTER = ClassDict(self.DYNAMIC_FILED_NAME_FORMATTER)
-        if not isinstance(self.DYNAMIC_FILED_VALUE_FORMATTER, ClassDict):
-            self.DYNAMIC_FILED_VALUE_FORMATTER = ClassDict(self.DYNAMIC_FILED_VALUE_FORMATTER)
+        if not isinstance(self.DYNAMIC_FILED_NAME_FORMATTER, _ClassDict):
+            self.DYNAMIC_FILED_NAME_FORMATTER = _ClassDict(self.DYNAMIC_FILED_NAME_FORMATTER)
+        if not isinstance(self.DYNAMIC_FILED_VALUE_FORMATTER, _ClassDict):
+            self.DYNAMIC_FILED_VALUE_FORMATTER = _ClassDict(self.DYNAMIC_FILED_VALUE_FORMATTER)
         result = {}
         for key_xpath, value_xpath in self.DYNAMIC_DATA.items():
             keys = self.html.xpath(key_xpath)
@@ -112,7 +112,7 @@ class MuParser:
         return result
 
     def parse(self, html, extra=None):
-        self.html = GoodHtml(html, encoding=self.encoding)
+        self.html = _GoodHtml(html, encoding=self.encoding)
         result = {}
         result.update(self._parse_dynamic())
         result.update(self._parse_fixed_data())
