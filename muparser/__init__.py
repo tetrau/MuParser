@@ -32,8 +32,11 @@ class _GoodHtml:
 
     def __init__(self, html, encoding='utf-8', cache_xpath=True):
         if isinstance(html, bytes):
-            html = html.decode(encoding)
-        self.html = lxml.html.fromstring(html)
+            self.html = lxml.html.fromstring(html.decode(encoding))
+        elif isinstance(html, lxml.html.HtmlElement):
+            self.html = html
+        else:
+            self.html = lxml.html.fromstring(html)
         self.cache_xpath = cache_xpath
 
     def get_xpath(self, xpath):
@@ -75,18 +78,17 @@ class MuParser:
         self.default_formatter = default_formatter
         self.raise_ = raise_
         self.encoding = encoding
-        self.html = None
 
     def _raise_exception(self, exception):
         if self.raise_:
             raise exception
 
-    def _parse_fixed_data(self):
+    def _parse_fixed_data(self, html):
         if not isinstance(self.FIXED_FILED_VALUE_FORMATTER, _ClassDict):
             self.FIXED_FILED_VALUE_FORMATTER = _ClassDict(self.FIXED_FILED_VALUE_FORMATTER)
         result = {}
         for key, xpath in self.FIXED_DATA.items():
-            value = self.html.xpath(xpath)
+            value = html.xpath(xpath)
             if not (len(value) <= 1 or len(set(value)) == 1):
                 exp = BadXpath('{} returns multiple distinct results')
                 self._raise_exception(exp)
@@ -95,15 +97,15 @@ class MuParser:
             result[key] = value
         return result
 
-    def _parse_dynamic(self):
+    def _parse_dynamic(self, html):
         if not isinstance(self.DYNAMIC_FILED_NAME_FORMATTER, _ClassDict):
             self.DYNAMIC_FILED_NAME_FORMATTER = _ClassDict(self.DYNAMIC_FILED_NAME_FORMATTER)
         if not isinstance(self.DYNAMIC_FILED_VALUE_FORMATTER, _ClassDict):
             self.DYNAMIC_FILED_VALUE_FORMATTER = _ClassDict(self.DYNAMIC_FILED_VALUE_FORMATTER)
         result = {}
         for key_xpath, value_xpath in self.DYNAMIC_DATA.items():
-            keys = self.html.xpath(key_xpath)
-            values = self.html.xpath(value_xpath)
+            keys = html.xpath(key_xpath)
+            values = html.xpath(value_xpath)
             if len(keys) != len(values):
                 self._raise_exception(BadXpath('{} and {} selected elements do not match'))
             keys = map(lambda x: self.DYNAMIC_FILED_NAME_FORMATTER[x](x), keys)
@@ -112,10 +114,10 @@ class MuParser:
         return result
 
     def parse(self, html, extra=None):
-        self.html = _GoodHtml(html, encoding=self.encoding)
+        html = _GoodHtml(html, encoding=self.encoding)
         result = {}
-        result.update(self._parse_dynamic())
-        result.update(self._parse_fixed_data())
+        result.update(self._parse_dynamic(html))
+        result.update(self._parse_fixed_data(html))
         if extra:
             result.update(extra)
         result = self.post_processing(result)
